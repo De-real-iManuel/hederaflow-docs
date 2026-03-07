@@ -1,0 +1,477 @@
+---
+title: 'Architecture & Flows'
+description: 'System architecture, sequence diagrams, and interaction flows'
+icon: 'diagram-project'
+---
+
+## System Architecture
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        A[React PWA]
+        B[HashPack Wallet]
+    end
+    
+    subgraph "API Gateway"
+        C[FastAPI Backend]
+        D[JWT Auth Middleware]
+        E[Rate Limiter]
+    end
+    
+    subgraph "Business Logic"
+        F[OCR Service]
+        G[Fraud Detection]
+        H[Billing Service]
+        I[Hedera Service]
+    end
+    
+    subgraph "Data Layer"
+        J[(PostgreSQL)]
+        K[(Redis Cache)]
+    end
+    
+    subgraph "External Services"
+        L[Google Vision API]
+        M[Pinata IPFS]
+        N[CoinGecko API]
+    end
+    
+    subgraph "Hedera Network"
+        O[HCS Topics]
+        P[HBAR Transfers]
+        Q[Mirror Node API]
+    end
+    
+    A -->|HTTP/REST| C
+    B -->|Sign Tx| A
+    C --> D
+    D --> E
+    E --> F
+    E --> G
+    E --> H
+    E --> I
+    
+    F --> L
+    G --> M
+    H --> N
+    I --> O
+    I --> P
+    I --> Q
+    
+    C --> J
+    C --> K
+    
+    style O fill:#9cf
+    style P fill:#9cf
+    style Q fill:#9cf
+```
+
+## Core User Flows
+
+### 1. User Registration & Wallet Connection
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant H as Hedera
+    participant DB as Database
+    
+    U->>F: Enter email & password
+    F->>B: POST /auth/register
+    B->>DB: Create user record
+    B->>H: Create Hedera account
+    H-->>B: Account ID + Private Key
+    B->>DB: Store Hedera account ID
+    B-->>F: JWT token + user data
+    F->>F: Store token in localStorage
+    
+    Note over U,F: Optional: HashPack Wallet Connection
+    U->>F: Click "Connect HashPack"
+    F->>HashPack: Request connection
+    HashPack-->>F: Account ID + signature
+    F->>B: POST /auth/wallet-connect
+    B->>H: Verify signature
+    H-->>B: Signature valid
+    B->>DB: Link wallet to user
+    B-->>F: Updated user data
+```
+
+### 2. Meter Registration
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant DB as Database
+    
+    U->>F: Enter meter details
+    Note over U: Meter ID, Utility Provider,<br/>Band Classification
+    F->>B: POST /meters
+    B->>B: Validate meter ID format
+    B->>DB: Check meter uniqueness
+    DB-->>B: Meter available
+    B->>DB: Create meter record
+    B-->>F: Meter created
+    F->>F: Navigate to home page
+```
+
+### 3. Meter Reading Verification (Core Flow)
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant OCR as Google Vision
+    participant FD as Fraud Detection
+    participant IPFS as Pinata
+    participant HCS as Hedera HCS
+    participant DB as Database
+    
+    U->>F: Capture meter photo
+    F->>F: Client-side OCR (Tesseract)
+    
+    alt Client OCR confidence >= 90%
+        F->>B: POST /verify (with OCR result)
+    else Client OCR failed
+        F->>B: POST /verify (image only)
+        B->>OCR: Extract text
+        OCR-->>B: Reading + confidence
+    end
+    
+    B->>DB: Get previous reading
+    DB-->>B: Previous reading value
+    B->>B: Calculate consumption
+    
+    B->>FD: Analyze image + reading
+    FD->>FD: ELA analysis
+    FD->>FD: Anomaly detection
+    FD-->>B: Fraud score + flags
+    
+    B->>IPFS: Upload image
+    IPFS-->>B: IPFS hash
+    
+    B->>HCS: Log verification
+    Note over HCS: Type: VERIFICATION<br/>Reading, Confidence,<br/>Fraud Score, Status
+    HCS-->>B: Sequence number
+    
+    B->>DB: Save verification
+    
+    alt Consumption > 0
+        B->>B: Calculate bill
+        B->>DB: Create bill record
+    end
+    
+    B-->>F: Verification result
+    F->>U: Show result + bill
+```
+
+### 4. Bill Payment Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant R as Redis
+    participant CG as CoinGecko
+    participant HP as HashPack
+    participant H as Hedera
+    participant MN as Mirror Node
+    participant HCS as HCS Topic
+    participant DB as Database
+    
+    U->>F: Click "Pay Bill"
+    F->>B: POST /payments/prepare
+    B->>CG: Get HBAR price
+    CG-->>B: Price in fiat
+    B->>B: Calculate HBAR amount<br/>(+2% buffer)
+    B->>R: Create rate lock (5 min)
+    R-->>B: Lock created
+    B-->>F: Transaction details
+    
+    F->>U: Show payment details
+    U->>F: Confirm payment
+    F->>HP: Request transaction signature
+    HP->>U: Approve in wallet
+    U->>HP: Approve
+    HP->>H: Submit HBAR transfer
+    H-->>HP: Transaction ID
+    HP-->>F: Transaction ID
+    
+    F->>B: POST /payments/confirm
+    B->>R: Validate rate lock
+    R-->>B: Lock valid
+    B->>MN: Verify transaction
+    MN-->>B: Transaction confirmed
+    B->>B: Validate amount
+    
+    B->>HCS: Log payment
+    Note over HCS: Type: PAYMENT<br/>Bill ID, Amount HBAR,<br/>Amount Fiat, Exchange Rate
+    HCS-->>B: Sequence number
+    
+    B->>DB: Update bill status = PAID
+    B->>R: Delete rate lock
+    B-->>F: Payment receipt
+    F->>U: Show success + receipt
+```
+
+### 5. Dispute Flow (Future)
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant HCS as HCS Topic
+    participant DB as Database
+    
+    U->>F: Click "Dispute Bill"
+    F->>F: Show dispute form
+    U->>F: Enter reason + evidence
+    F->>B: POST /disputes
+    B->>DB: Create dispute record
+    B->>HCS: Log dispute
+    HCS-->>B: Sequence number
+    B-->>F: Dispute created
+    F->>U: Show dispute status
+    
+    Note over U,DB: Admin reviews dispute<br/>(out of scope for MVP)
+```
+
+## Module Interactions
+
+### Backend Service Architecture
+
+```mermaid
+graph LR
+    subgraph "API Endpoints"
+        A[auth.py]
+        B[meters.py]
+        C[verify.py]
+        D[payments.py]
+        E[bills.py]
+    end
+    
+    subgraph "Services"
+        F[OCRService]
+        G[FraudDetectionService]
+        H[BillingService]
+        I[HederaService]
+        J[ExchangeRateService]
+        K[ReceiptService]
+    end
+    
+    subgraph "Utils"
+        L[hedera_client]
+        M[redis_client]
+        N[transaction_verifier]
+    end
+    
+    C --> F
+    C --> G
+    C --> H
+    C --> I
+    D --> I
+    D --> J
+    D --> K
+    
+    I --> L
+    J --> M
+    D --> N
+    
+    style F fill:#ffd
+    style G fill:#ffd
+    style H fill:#ffd
+    style I fill:#9cf
+    style J fill:#ffd
+```
+
+### Frontend Component Hierarchy
+
+```mermaid
+graph TB
+    A[App.tsx]
+    A --> B[AuthPage]
+    A --> C[HomePage]
+    A --> D[ScanPage]
+    A --> E[BillsPage]
+    A --> F[HistoryPage]
+    A --> G[ProfilePage]
+    
+    C --> H[CurrentBillCard]
+    C --> I[UsageChart]
+    C --> J[QuickActions]
+    
+    D --> K[CameraCapture]
+    D --> L[OCRProcessor]
+    D --> M[VerificationResult]
+    
+    E --> N[BillDetails]
+    E --> O[PaymentButton]
+    E --> P[BillBreakdown]
+    
+    F --> Q[PaymentHistory]
+    F --> R[ReceiptDownload]
+    
+    style A fill:#9cf
+    style D fill:#ffd
+    style E fill:#ffd
+```
+
+## Data Flow Patterns
+
+### 1. Caching Strategy
+
+```mermaid
+graph LR
+    A[API Request] --> B{Cache Hit?}
+    B -->|Yes| C[Return Cached Data]
+    B -->|No| D[Fetch from Source]
+    D --> E[Store in Redis]
+    E --> F[Return Fresh Data]
+    
+    style B fill:#ffd
+    style E fill:#9cf
+```
+
+**Cache TTLs:**
+- Exchange rates: 5 minutes
+- Tariff data: 1 hour
+- User preferences: 15 minutes
+- Rate locks: 5 minutes (exact)
+
+### 2. Error Handling Flow
+
+```mermaid
+graph TB
+    A[API Request] --> B{Validation}
+    B -->|Invalid| C[400 Bad Request]
+    B -->|Valid| D{Authentication}
+    D -->|Failed| E[401 Unauthorized]
+    D -->|Success| F{Authorization}
+    F -->|Denied| G[403 Forbidden]
+    F -->|Allowed| H{Business Logic}
+    H -->|Error| I[500 Internal Error]
+    H -->|Success| J[200 OK]
+    
+    I --> K[Log Error]
+    K --> L[Rollback Transaction]
+    
+    style C fill:#f99
+    style E fill:#f99
+    style G fill:#f99
+    style I fill:#f99
+    style J fill:#9f9
+```
+
+### 3. Transaction Verification
+
+```mermaid
+graph TB
+    A[Transaction ID] --> B[Mirror Node Query]
+    B --> C{Transaction Found?}
+    C -->|No| D[404 Not Found]
+    C -->|Yes| E{Status = SUCCESS?}
+    E -->|No| F[400 Transaction Failed]
+    E -->|Yes| G{Amount Match?}
+    G -->|No| H[400 Amount Mismatch]
+    G -->|Yes| I{Recipient Match?}
+    I -->|No| J[400 Invalid Recipient]
+    I -->|Yes| K[✅ Verified]
+    
+    style D fill:#f99
+    style F fill:#f99
+    style H fill:#f99
+    style J fill:#f99
+    style K fill:#9f9
+```
+
+## Security Architecture
+
+### Authentication Flow
+
+```mermaid
+graph LR
+    A[Login Request] --> B[Validate Credentials]
+    B --> C[Generate JWT]
+    C --> D[Return Token]
+    D --> E[Store in localStorage]
+    
+    F[API Request] --> G[Extract JWT]
+    G --> H{Valid Token?}
+    H -->|No| I[401 Unauthorized]
+    H -->|Yes| J[Decode User ID]
+    J --> K[Fetch User from DB]
+    K --> L[Inject into Request]
+    
+    style C fill:#9cf
+    style H fill:#ffd
+```
+
+### Rate Limiting
+
+```mermaid
+graph TB
+    A[API Request] --> B[Extract User ID]
+    B --> C[Check Redis Counter]
+    C --> D{Count < Limit?}
+    D -->|No| E[429 Too Many Requests]
+    D -->|Yes| F[Increment Counter]
+    F --> G[Process Request]
+    
+    style E fill:#f99
+    style F fill:#9cf
+```
+
+## Scalability Considerations
+
+### Horizontal Scaling
+
+```mermaid
+graph TB
+    A[Load Balancer] --> B[API Instance 1]
+    A --> C[API Instance 2]
+    A --> D[API Instance N]
+    
+    B --> E[(PostgreSQL Primary)]
+    C --> E
+    D --> E
+    
+    E --> F[(Read Replica 1)]
+    E --> G[(Read Replica 2)]
+    
+    B --> H[(Redis Cluster)]
+    C --> H
+    D --> H
+    
+    style A fill:#9cf
+    style E fill:#ffd
+    style H fill:#ffd
+```
+
+### Regional HCS Topics
+
+```mermaid
+graph TB
+    A[User Request] --> B{Detect Country}
+    B -->|Europe| C[HCS Topic EU]
+    B -->|USA| D[HCS Topic US]
+    B -->|Asia| E[HCS Topic Asia]
+    B -->|South America| F[HCS Topic SA]
+    B -->|Africa| G[HCS Topic Africa]
+    
+    style C fill:#9cf
+    style D fill:#9cf
+    style E fill:#9cf
+    style F fill:#9cf
+    style G fill:#9cf
+```
+
+---
+
+**Next**: [Getting Started →](/quickstart) | [API Reference →](/api-reference/introduction)

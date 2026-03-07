@@ -1,0 +1,444 @@
+---
+title: 'Getting Started'
+description: 'Install, configure, and run Hedera Flow locally'
+icon: 'rocket'
+---
+
+## Prerequisites
+
+Before you begin, ensure you have:
+
+<CardGroup cols={2}>
+  <Card title="Development Tools" icon="code">
+    - Node.js 18+ and npm
+    - Python 3.11+
+    - Git
+  </Card>
+  
+  <Card title="Services" icon="server">
+    - PostgreSQL 16 (or Docker)
+    - Redis 7 (or Docker)
+    - Hedera testnet account
+  </Card>
+</CardGroup>
+
+## Quick Start (5 minutes)
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/yourusername/hedera-flow.git
+cd hedera-flow
+```
+
+### 2. Start Database Services
+
+```bash
+# Start PostgreSQL + Redis with Docker Compose
+docker-compose up -d
+
+# Verify containers are running
+docker ps
+```
+
+### 3. Setup Backend
+
+```bash
+cd backend
+
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# Windows:
+venv\Scripts\activate
+# Linux/Mac:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Copy environment template
+cp .env.example .env
+
+# Edit .env with your configuration (see below)
+nano .env
+```
+
+### 4. Configure Environment Variables
+
+Edit `backend/.env`:
+
+```bash
+# Database (local Docker)
+DATABASE_URL=postgresql://hedera_user:hedera_dev_password@localhost:5432/hedera_flow
+
+# Redis (local Docker)
+REDIS_URL=redis://:hedera_redis_password@localhost:6379/0
+
+# JWT Secret (generate with: openssl rand -hex 32)
+JWT_SECRET_KEY=your-secret-key-here
+
+# Hedera Testnet Accounts
+HEDERA_NETWORK=testnet
+HEDERA_OPERATOR_ID=0.0.xxxxx
+HEDERA_OPERATOR_KEY=302e...
+HEDERA_TREASURY_ID=0.0.xxxxx
+HEDERA_TREASURY_KEY=302e...
+
+# HCS Topics (create via Hedera Portal or script)
+HCS_TOPIC_EU=0.0.xxxxx
+HCS_TOPIC_US=0.0.xxxxx
+HCS_TOPIC_ASIA=0.0.xxxxx
+HCS_TOPIC_SA=0.0.xxxxx
+HCS_TOPIC_AFRICA=0.0.xxxxx
+
+# Google Cloud Vision (optional for OCR)
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
+
+# IPFS (Pinata - optional)
+PINATA_API_KEY=your-pinata-key
+PINATA_SECRET_KEY=your-pinata-secret
+
+# Exchange Rate API (optional)
+COINGECKO_API_KEY=your-coingecko-key
+
+# CORS (frontend URL)
+CORS_ORIGINS=http://localhost:5173,http://localhost:8080
+```
+
+### 5. Run Database Migrations
+
+```bash
+# Apply all migrations
+python run_migration.py
+
+# Verify migration status
+alembic current
+```
+
+### 6. Start Backend Server
+
+```bash
+# Development mode with auto-reload
+python run.py
+
+# Or with uvicorn directly
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Backend runs on: **http://localhost:8000**
+
+API docs: **http://localhost:8000/docs**
+
+### 7. Setup Frontend
+
+Open a new terminal:
+
+```bash
+cd hedera-flow  # Back to root directory
+
+# Install dependencies
+npm install
+
+# Copy environment template
+cp .env.example .env
+
+# Edit .env
+nano .env
+```
+
+Edit `.env`:
+
+```bash
+VITE_API_BASE_URL=http://localhost:8000
+VITE_API_TIMEOUT=30000
+VITE_HEDERA_NETWORK=testnet
+```
+
+### 8. Start Frontend
+
+```bash
+npm run dev
+```
+
+Frontend runs on: **http://localhost:5173**
+
+## Hedera Setup
+
+### Create Testnet Accounts
+
+<Steps>
+  <Step title="Get Testnet HBAR">
+    Visit [Hedera Portal](https://portal.hedera.com/) and create a testnet account with free HBAR
+  </Step>
+  
+  <Step title="Create Operator Account">
+    ```bash
+    cd backend
+    python scripts/create_hedera_accounts.py
+    ```
+    This creates:
+    - Operator account (for API operations)
+    - Treasury account (for receiving payments)
+  </Step>
+  
+  <Step title="Create HCS Topics">
+    ```bash
+    python scripts/create_hcs_topics.py
+    ```
+    Creates 5 regional topics for audit logging
+  </Step>
+  
+  <Step title="Update .env">
+    Copy the generated account IDs and keys to `backend/.env`
+  </Step>
+</Steps>
+
+### Verify Hedera Integration
+
+```bash
+# Test Hedera connection
+python scripts/test_hedera_accounts.py
+
+# Test HCS message submission
+python scripts/test_hcs_topics.py
+```
+
+## Testing the Application
+
+### 1. Register a User
+
+1. Navigate to http://localhost:5173
+2. Click "Sign Up"
+3. Enter email and password
+4. Submit registration
+
+### 2. Register a Meter
+
+1. After login, click "Register Meter"
+2. Enter meter details:
+   - Meter ID: `ABC123456` (8-15 characters)
+   - Utility Provider: Select from dropdown
+   - Band Classification: Select band (A, B, C, D, E)
+   - State/Province: Your location
+3. Submit registration
+
+### 3. Verify Meter Reading
+
+1. Click "Scan Meter" from home page
+2. Upload a meter photo (or use test image)
+3. Wait for OCR processing
+4. Review verification result:
+   - Reading value
+   - Confidence score
+   - Fraud detection status
+   - Generated bill (if not first reading)
+
+### 4. Pay Bill (with HashPack)
+
+<Warning>
+  HashPack wallet integration requires a browser extension. Install from [hashpack.app](https://www.hashpack.app/)
+</Warning>
+
+1. Navigate to "Bills" page
+2. Click "Pay Now" on pending bill
+3. Review payment details (HBAR amount)
+4. Click "Pay with HashPack"
+5. Approve transaction in HashPack wallet
+6. Wait for confirmation
+7. Download PDF receipt
+
+### 5. View Payment History
+
+1. Navigate to "History" page
+2. View all paid bills
+3. Click on any payment to see details
+4. Download receipt PDF
+5. View transaction on HashScan
+
+## Test Data
+
+### Sample Meter IDs (Nigeria)
+
+```
+EKEDC-12345678  # Eko Electricity (Lagos)
+IKEDC-87654321  # Ikeja Electric (Lagos)
+AEDC-11223344   # Abuja Electricity (Abuja)
+```
+
+### Sample Test Images
+
+Located in `backend/test/fixtures/`:
+- `meter_digital_clear.jpg` - High confidence (95%+)
+- `meter_analog_medium.jpg` - Medium confidence (85%)
+- `meter_blurry_low.jpg` - Low confidence (60%)
+
+## API Testing
+
+### Using Swagger UI
+
+1. Navigate to http://localhost:8000/docs
+2. Click "Authorize" button
+3. Login to get JWT token:
+   ```json
+   POST /auth/login
+   {
+     "email": "test@example.com",
+     "password": "password123"
+   }
+   ```
+4. Copy `access_token` from response
+5. Enter token in authorization dialog
+6. Test any endpoint
+
+### Using cURL
+
+```bash
+# Login
+curl -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=test@example.com&password=password123"
+
+# Get current user (with token)
+curl -X GET http://localhost:8000/auth/me \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+
+# Create meter
+curl -X POST http://localhost:8000/meters \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "meter_id": "ABC123456",
+    "utility_provider": "EKEDC",
+    "band_classification": "A",
+    "state_province": "Lagos"
+  }'
+```
+
+## Troubleshooting
+
+### Backend Issues
+
+<AccordionGroup>
+  <Accordion title="Database connection failed">
+    **Solution**: Verify Docker containers are running
+    ```bash
+    docker ps
+    docker-compose logs postgres
+    ```
+  </Accordion>
+  
+  <Accordion title="Hedera SDK errors">
+    **Solution**: Check Hedera account IDs and keys in `.env`
+    ```bash
+    python scripts/test_hedera_accounts.py
+    ```
+  </Accordion>
+  
+  <Accordion title="OCR not working">
+    **Solution**: Verify Google Cloud credentials
+    ```bash
+    echo $GOOGLE_APPLICATION_CREDENTIALS
+    python scripts/test_ocr.py
+    ```
+  </Accordion>
+  
+  <Accordion title="Redis connection failed">
+    **Solution**: Check Redis password in `.env`
+    ```bash
+    redis-cli -a hedera_redis_password ping
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Frontend Issues
+
+<AccordionGroup>
+  <Accordion title="API connection failed">
+    **Solution**: Verify backend is running and CORS is configured
+    ```bash
+    curl http://localhost:8000/health
+    ```
+  </Accordion>
+  
+  <Accordion title="HashPack not connecting">
+    **Solution**: Install HashPack extension and create testnet account
+    - Download: https://www.hashpack.app/
+    - Switch to testnet in HashPack settings
+  </Accordion>
+  
+  <Accordion title="Build errors">
+    **Solution**: Clear node_modules and reinstall
+    ```bash
+    rm -rf node_modules package-lock.json
+    npm install
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Production Deployment
+
+### Backend (Railway/Render)
+
+```bash
+# Build Docker image
+docker build -t hedera-flow-backend ./backend
+
+# Push to registry
+docker tag hedera-flow-backend registry.example.com/hedera-flow-backend
+docker push registry.example.com/hedera-flow-backend
+
+# Deploy with environment variables
+# Set all .env variables in platform dashboard
+```
+
+### Frontend (Vercel/Netlify)
+
+```bash
+# Build for production
+npm run build
+
+# Deploy dist/ folder
+# Or connect GitHub repo for automatic deployments
+```
+
+### Database (Supabase)
+
+1. Create project at [supabase.com](https://supabase.com)
+2. Get connection string from Settings → Database
+3. Update `DATABASE_URL` in backend `.env`
+4. Run migrations:
+   ```bash
+   python run_migration.py
+   ```
+
+### Redis (Upstash)
+
+1. Create database at [upstash.com](https://upstash.com)
+2. Get Redis URL from dashboard
+3. Update `REDIS_URL` in backend `.env`
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture" icon="diagram-project" href="/architecture">
+    Understand system design and flows
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Explore all endpoints
+  </Card>
+  
+  <Card title="MVP Features" icon="star" href="/mvp-features">
+    See what's implemented
+  </Card>
+  
+  <Card title="Roadmap" icon="map" href="/roadmap">
+    Future enhancements
+  </Card>
+</CardGroup>
+
+---
+
+**Need help?** Check [Troubleshooting](#troubleshooting) or open an issue on GitHub.

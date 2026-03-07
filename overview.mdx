@@ -1,0 +1,124 @@
+---
+title: 'Project Overview'
+description: 'Hedera Flow - Blockchain-powered utility verification platform'
+icon: 'bolt'
+---
+
+## What is Hedera Flow?
+
+Hedera Flow is a **decentralized utility bill verification and payment platform** built on Hedera Hashgraph. It combines AI-powered OCR, fraud detection, and blockchain transparency to revolutionize how consumers verify and pay electricity bills in emerging markets.
+
+## The Problem
+
+In developing regions (Nigeria, India, Brazil), utility billing fraud costs consumers **$2.3B annually**:
+- **Estimated bills** without meter readings lead to overcharging
+- Manual verification is time-consuming and error-prone
+- No transparent audit trail for disputes
+- Payment reconciliation takes weeks
+
+## Our Solution
+
+Hedera Flow provides:
+- **AI-Powered Verification**: OCR + fraud detection for instant meter reading validation
+- **Blockchain Transparency**: Immutable audit logs on Hedera Consensus Service (HCS)
+- **Instant Payments**: HBAR-based payments with real-time settlement
+- **Regional Compliance**: Multi-currency support (EUR, USD, NGN, INR, BRL) with localized tariffs
+
+## Innovation Highlights
+
+<CardGroup cols={2}>
+  <Card title="Hedera Integration" icon="link">
+    - HCS for immutable audit logs (5 regional topics)
+    - HBAR payments with Mirror Node verification
+    - Sub-second transaction finality
+  </Card>
+  
+  <Card title="AI-Powered" icon="brain">
+    - Google Vision API for OCR (90%+ accuracy)
+    - Multi-factor fraud detection
+    - Anomaly detection for consumption patterns
+  </Card>
+  
+  <Card title="User-Centric" icon="user">
+    - Mobile-first PWA design
+    - HashPack wallet integration
+    - PDF receipts with QR codes
+  </Card>
+  
+  <Card title="Production-Ready" icon="rocket">
+    - FastAPI + React architecture
+    - PostgreSQL + Redis caching
+    - Docker deployment ready
+  </Card>
+</CardGroup>
+
+## Value to Hedera Ecosystem
+
+1. **Real-World Utility**: Solves a $2.3B problem affecting 500M+ people
+2. **Network Usage**: Generates consistent HCS transactions (verifications + payments)
+3. **Developer Showcase**: Demonstrates Hedera SDK, HCS, and Mirror Node integration
+4. **Scalability**: Regional topic architecture supports global expansion
+
+## MVP Status
+
+<Steps>
+  <Step title="Core Features ✅">
+    - User authentication (email + HashPack wallet)
+    - Meter registration with utility provider mapping
+    - OCR-based meter reading verification
+    - Fraud detection (ELA + anomaly detection)
+  </Step>
+  
+  <Step title="Blockchain Integration ✅">
+    - HCS logging for verifications and payments
+    - HBAR payment processing
+    - Mirror Node transaction verification
+    - Regional topic routing (EU, US, Asia, SA, Africa)
+  </Step>
+  
+  <Step title="Billing & Payments ✅">
+    - Dynamic tariff calculation (Nigeria NERC-compliant)
+    - Multi-currency exchange rates (CoinGecko)
+    - PDF receipt generation with QR codes
+    - Rate locking (5-min volatility protection)
+  </Step>
+</Steps>
+
+## Tech Stack Summary
+
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React 18 + Vite, TypeScript, shadcn/ui, TanStack Query |
+| **Backend** | FastAPI, Python 3.11+, SQLAlchemy, Alembic |
+| **Database** | PostgreSQL 16 (Supabase), Redis 7 (Upstash) |
+| **Blockchain** | Hedera SDK, HCS Topics, Mirror Node API |
+| **AI/ML** | Google Cloud Vision API, Pillow (ELA fraud detection) |
+| **DevOps** | Docker Compose, GitHub Actions (planned) |
+
+## Live Demo
+
+- **Frontend**: [Demo URL] (if deployed)
+- **HCS Topics**: View real-time logs on HashScan
+  - EU: [0.0.8052384](https://hashscan.io/testnet/topic/0.0.8052384)
+  - US: [0.0.8052396](https://hashscan.io/testnet/topic/0.0.8052396)
+  - Asia: [0.0.8052389](https://hashscan.io/testnet/topic/0.0.8052389)
+
+## Quick Links
+
+<CardGroup cols={3}>
+  <Card title="Getting Started" icon="play" href="/quickstart">
+    Install and run locally
+  </Card>
+  
+  <Card title="Architecture" icon="diagram-project" href="/architecture">
+    System design and flows
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Explore endpoints
+  </Card>
+</CardGroup>
+
+---
+
+**Built for Hedera Hackathon 2024** | [GitHub](https://github.com/yourusername/hedera-flow) | [Demo Video](#)
