@@ -1,8 +1,14 @@
-<svg width="200" height="40" viewBox="0 0 200 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Hedera logo mark -->
-  <path d="M8 10h4v8h8v-8h4v20h-4v-8h-8v8H8V10z" fill="#0066FF"/>
-  <circle cx="14" cy="20" r="1.5" fill="#0066FF"/>
+<svg width="200" height="50" viewBox="0 0 200 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Hedera H logo -->
+  <g transform="translate(5, 5)">
+    <rect width="40" height="40" fill="#222222"/>
+    <path d="M10 8h4v10h8V8h4v24h-4V22h-8v10h-4V8z" fill="white"/>
+    <path d="M10 18h16v4H10z" fill="white"/>
+    <path d="M5 28c0 0 8 4 16 4s16-4 16-4" stroke="white" stroke-width="2" fill="none"/>
+    <path d="M5 24c0 0 8 4 16 4s16-4 16-4" stroke="white" stroke-width="2" fill="none"/>
+    <path d="M5 20c0 0 8 4 16 4s16-4 16-4" stroke="white" stroke-width="2" fill="none"/>
+  </g>
   
   <!-- Text -->
-  <text x="32" y="27" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="600" fill="#1a1a1a">Hedera Flow</text>
+  <text x="55" y="32" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600" fill="#222222">Hedera Flow</text>
 </svg>
