@@ -1,11 +1,8 @@
-<svg width="180" height="40" viewBox="0 0 180 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Hedera H icon -->
-  <rect x="2" y="8" width="4" height="24" fill="#0066FF" rx="1"/>
-  <rect x="14" y="8" width="4" height="24" fill="#0066FF" rx="1"/>
-  <rect x="2" y="18" width="16" height="4" fill="#0066FF" rx="1"/>
+<svg width="200" height="40" viewBox="0 0 200 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Hedera logo mark -->
+  <path d="M8 10h4v8h8v-8h4v20h-4v-8h-8v8H8V10z" fill="#0066FF"/>
+  <circle cx="14" cy="20" r="1.5" fill="#0066FF"/>
   
-  <!-- Flow text -->
-  <text x="28" y="28" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#1a1a1a">
-    Hedera Flow
-  </text>
+  <!-- Text -->
+  <text x="32" y="27" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="600" fill="#1a1a1a">Hedera Flow</text>
 </svg>
